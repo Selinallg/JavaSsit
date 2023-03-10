@@ -1,0 +1,2 @@
+include ':app', ':javassist'
+rootProject.name='JavaSsit'
