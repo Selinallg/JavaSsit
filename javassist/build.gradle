@@ -20,7 +20,8 @@ uploadArchives{
         pom.groupId = 'com.javassist'
         pom.artifactId = 'modify'
         pom.version = '1.0.0'
-        repository(url: uri('../repo'))
+//        repository(url: uri('../repo'))
+        repository(url: uri('E:\\maven\\repo'))
     }
 }
 sourceCompatibility = "7"

@@ -24,19 +24,28 @@ public class ModifyTransform extends Transform {
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
         super.transform(transformInvocation)
+
         project.android.bootClasspath.each {
             pool.appendClassPath(it.absolutePath)
+            println "========appendClassPath======== " + it.absolutePath
         }
 //       1 拿到输入
         transformInvocation.inputs.each {
 //            class 1     ---> 文件夹     jar 可能 1  不可能2  N
+            def size = it.directoryInputs.size()
+            println "========directoryInputssize()======== " + size
             it.directoryInputs.each {
+
 
                 def preFileName = it.file.absolutePath
                 pool.insertClassPath(preFileName)
 
                 println "========directoryInputs======== " + preFileName
-                findTarget(it.file, preFileName)
+                try {
+                    findTarget(it.file, preFileName)
+                } catch (Exception e) {
+                    println "========Exception======== " + e.getMessage()
+                }
 //  it.file
                 //       2 查询输出的文件夹    目的地
                 def dest = transformInvocation.outputProvider.getContentLocation(
@@ -48,12 +57,16 @@ public class ModifyTransform extends Transform {
 
                 //       3  文件copy  ---》 下一个环节
                 FileUtils.copyDirectory(it.file, dest)
+                println "========FileUtils.copyDirectory======== " + it.file.getPath() + "==>" + dest.getPath()
             }
+
+
             it.jarInputs.each {
                 def dest = transformInvocation.outputProvider.getContentLocation(it.name
                         , it.contentTypes, it.scopes, Format.JAR)
 //                    去哪里
                 FileUtils.copyFile(it.file, dest)
+                println "========FileUtils.copyJar======== " + it.file.getPath() + "==>" + dest.getPath()
             }
 //            修改class   不是修改 jar
         }
@@ -64,7 +77,7 @@ public class ModifyTransform extends Transform {
 //        想干嘛干嘛
     }
 
-//    fileName C:\Users\maniu\Downloads\ManiuJavaSsit\app\build\intermediates\javac\debug\classes
+//    \ManiuJavaSsit\app\build\intermediates\javac\debug\classes
     private void findTarget(File dir, String fileName) {
         if (dir.isDirectory()) {
             dir.listFiles().each {
@@ -85,6 +98,11 @@ public class ModifyTransform extends Transform {
     private void modify(def filePath, String fileName) {
         if (filePath.contains('R$') || filePath.contains('R.class')
                 || filePath.contains("BuildConfig.class")) {
+            return
+        }
+
+
+        if (filePath.contains('$')) {
             return
         }
 
@@ -118,7 +136,7 @@ public class ModifyTransform extends Transform {
                 method.insertAfter("end = System.currentTimeMillis();");
                 method.insertAfter("System.out.println(\"方法 [" + methodName + "] 耗时:\"+ (end - begin) +\"ns\");");
                 method.insertAfter("System.out.println(\"退出 [" + methodName + "] 方法\");");
-            }else {
+            } else {
                 //修改字节码，定义两个long类型变量
                 method.addLocalVariable("begin", CtClass.longType);
                 method.addLocalVariable("end", CtClass.longType);
@@ -133,16 +151,16 @@ public class ModifyTransform extends Transform {
 
 
 //            method.insertAfter("android.util.Log.d(\"llg-usetime\", \"llg: \"+(end - start));")
-            method.insertAfter("if(true){}")
-            if (method.getParameterTypes().length == 1) {
-                method.insertBefore("{ System.out.println(\$1);}")
-            }
-            if (method.getParameterTypes().length == 2) {
-                method.insertBefore("{ System.out.println(\$1); System.out.println(\$2);}")
-            }
-            if (method.getParameterTypes().length == 3) {
-                method.insertBefore("{ System.out.println(\$1);System.out.println(\$2);System.out.println(\\\$3);}")
-            }
+//            method.insertAfter("if(true){}")
+//            if (method.getParameterTypes().length == 1) {
+//                method.insertBefore("{ System.out.println(\$1);}")
+//            }
+//            if (method.getParameterTypes().length == 2) {
+//                method.insertBefore("{ System.out.println(\$1); System.out.println(\$2);}")
+//            }
+//            if (method.getParameterTypes().length == 3) {
+//                method.insertBefore("{ System.out.println(\$1);System.out.println(\$2);System.out.println(\\\$3);}")
+//            }
         }
 
         ctClass.writeFile(fileName)
@@ -151,7 +169,7 @@ public class ModifyTransform extends Transform {
 
     @Override
     String getName() {
-        return "david"
+        return "llg"
     }
 
     @Override
